@@ -80,6 +80,10 @@ body {
   margin-bottom: 1rem;
 }
 
+.home-actions {
+  margin-top: 1rem;
+}
+
 .eyebrow {
   margin: 0 0 0.75rem;
   color: #486581;
@@ -111,6 +115,17 @@ p {
 
 .detail-header h1 {
   margin: 0 0 1rem;
+}
+
+.detail-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.detail-header-row h1 {
+  margin-bottom: 0;
 }
 
 .detail-section {
@@ -224,6 +239,11 @@ p {
   border-color: #d9e2ec;
 }
 
+.button-danger {
+  background: #b42318;
+  color: white;
+}
+
 .modal-backdrop {
   position: fixed;
   inset: 0;
@@ -324,5 +344,10 @@ p {
   .detail-page {
     margin: 1rem auto;
     padding: 1rem;
+  }
+
+  .detail-header-row {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

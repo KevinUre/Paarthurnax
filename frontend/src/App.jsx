@@ -8,6 +8,11 @@ function HomePage() {
       <p className="eyebrow">Grassroots Toolkit</p>
       <h1>Hello, world.</h1>
       <p>React + Vite is running.</p>
+      <div className="home-actions">
+        <Link className="button button-secondary" to="/pages">
+          Browse Pages
+        </Link>
+      </div>
     </section>
   );
 }
@@ -65,6 +70,29 @@ function linesToArray(multiline) {
     .filter(Boolean);
 }
 
+function arrayToLines(values) {
+  if (!Array.isArray(values)) {
+    return "";
+  }
+  return values.join("\n");
+}
+
+function linesToCitations(multiline) {
+  const citationUrls = linesToArray(multiline);
+  return Object.fromEntries(citationUrls.map((url, index) => [String(index + 1), url]));
+}
+
+function citationsToLines(citations) {
+  if (!citations || typeof citations !== "object") {
+    return "";
+  }
+
+  return Object.entries(citations)
+    .sort(([a], [b]) => Number(a) - Number(b))
+    .map(([, value]) => String(value))
+    .join("\n");
+}
+
 function NewPageForm({ user }) {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
@@ -95,17 +123,12 @@ function NewPageForm({ user }) {
     setError("");
     setIsSubmitting(true);
 
-    const citationUrls = linesToArray(citationsText);
-    const citations = Object.fromEntries(
-      citationUrls.map((url, index) => [String(index + 1), url])
-    );
-
     const data = {
       title: normalizedTitle,
       talkingPoints: linesToArray(talkingPointsText),
       questions: linesToArray(questionsText),
       related: linesToArray(relatedText),
-      citations,
+      citations: linesToCitations(citationsText),
     };
 
     const token = localStorage.getItem(AUTH_TOKEN_KEY);
@@ -199,6 +222,183 @@ function NewPageForm({ user }) {
   );
 }
 
+function EditPageForm({ user }) {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const [title, setTitle] = useState("");
+  const [talkingPointsText, setTalkingPointsText] = useState("");
+  const [questionsText, setQuestionsText] = useState("");
+  const [relatedText, setRelatedText] = useState("");
+  const [citationsText, setCitationsText] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    apiRequest(`/pages/${encodeURIComponent(id)}`)
+      .then((result) => {
+        const data = result?.data || {};
+        setTitle(data.title || result.id || "");
+        setTalkingPointsText(arrayToLines(data.talkingPoints));
+        setQuestionsText(arrayToLines(data.questions));
+        setRelatedText(arrayToLines(data.related));
+        setCitationsText(citationsToLines(data.citations));
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setIsLoading(false));
+  }, [id]);
+
+  if (!canManagePages(user)) {
+    return (
+      <section className="hero">
+        <h1>Not authorized</h1>
+        <p className="error">You must be signed in as curator or admin to edit pages.</p>
+      </section>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <section className="hero">
+        <p>Loading page...</p>
+      </section>
+    );
+  }
+
+  async function onSubmit(event) {
+    event.preventDefault();
+    const normalizedTitle = title.trim();
+    if (!normalizedTitle) {
+      setError("Title is required.");
+      return;
+    }
+
+    setError("");
+    setIsSubmitting(true);
+
+    const data = {
+      title: id,
+      talkingPoints: linesToArray(talkingPointsText),
+      questions: linesToArray(questionsText),
+      related: linesToArray(relatedText),
+      citations: linesToCitations(citationsText),
+    };
+
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+
+    try {
+      await apiRequest(`/pages/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ data }),
+      });
+      navigate(`/pages/${encodeURIComponent(id)}`);
+    } catch (submitError) {
+      setError(submitError.message);
+      setIsSubmitting(false);
+    }
+  }
+
+  async function onDelete() {
+    const confirmed = window.confirm(
+      `Delete page "${id}"? This cannot be undone.`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setError("");
+    setIsSubmitting(true);
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+
+    try {
+      await apiRequest(`/pages/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      navigate("/pages");
+    } catch (deleteError) {
+      setError(deleteError.message);
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <section className="detail-page">
+      <header className="detail-header">
+        <h1>Edit Page</h1>
+        <p>Page key: {id}</p>
+      </header>
+
+      <form className="page-form" onSubmit={onSubmit}>
+        <label className="field">
+          <span>Title (read-only, tied to page key)</span>
+          <input
+            type="text"
+            value={title}
+            readOnly
+          />
+        </label>
+
+        <label className="field">
+          <span>Talking Points (one per line)</span>
+          <textarea
+            rows={8}
+            value={talkingPointsText}
+            onChange={(event) => setTalkingPointsText(event.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span>Questions (one per line)</span>
+          <textarea
+            rows={8}
+            value={questionsText}
+            onChange={(event) => setQuestionsText(event.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span>Related (one per line)</span>
+          <textarea
+            rows={6}
+            value={relatedText}
+            onChange={(event) => setRelatedText(event.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span>Citations URLs (one per line, auto-numbered)</span>
+          <textarea
+            rows={8}
+            value={citationsText}
+            onChange={(event) => setCitationsText(event.target.value)}
+          />
+        </label>
+
+        {error ? <p className="error-toast">{error}</p> : null}
+
+        <div className="button-row">
+          <button className="button button-danger" type="button" onClick={onDelete} disabled={isSubmitting}>
+            Delete Page
+          </button>
+          <Link className="button button-secondary" to={`/pages/${encodeURIComponent(id)}`}>
+            Cancel
+          </Link>
+          <button className="button button-primary" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Save Changes"}
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
 function renderRichText(text) {
   if (typeof text !== "string" || !text) {
     return text;
@@ -248,7 +448,7 @@ function Section({ title, children }) {
   );
 }
 
-function PageDetail() {
+function PageDetail({ user }) {
   const { id } = useParams();
   const [page, setPage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -295,8 +495,13 @@ function PageDetail() {
 
   return (
     <article className="detail-page">
-      <header className="detail-header">
+      <header className="detail-header detail-header-row">
         <h1>{data.title || page.id}</h1>
+        {canManagePages(user) ? (
+          <Link className="button button-secondary" to={`/pages/${encodeURIComponent(page.id)}/edit`}>
+            Edit
+          </Link>
+        ) : null}
       </header>
 
       <Section title="Talking Points">
@@ -472,9 +677,6 @@ export default function App() {
         <Link className="brand" to="/">
           Paarthurnax
         </Link>
-        <div className="nav-links">
-          <Link to="/pages">Pages</Link>
-        </div>
         <div className="nav-actions">
           {isCheckingSession ? null : user ? (
             <div className="user-menu-wrap" ref={userMenuRef}>
@@ -506,7 +708,8 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/pages" element={<PagesIndexPage user={user} />} />
           <Route path="/pages/new" element={<NewPageForm user={user} />} />
-          <Route path="/pages/:id" element={<PageDetail />} />
+          <Route path="/pages/:id" element={<PageDetail user={user} />} />
+          <Route path="/pages/:id/edit" element={<EditPageForm user={user} />} />
         </Routes>
       </div>
 
@@ -520,34 +723,41 @@ export default function App() {
             onClick={(event) => event.stopPropagation()}
           >
             <h2>Welcome back</h2>
-            <label className="field">
-              <span>Username</span>
-              <input
-                autoFocus
-                type="text"
-                value={username}
-                onChange={(event) => setUsername(event.target.value)}
-                placeholder="yourname"
-              />
-            </label>
-            <label className="field">
-              <span>Password</span>
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                placeholder="password"
-              />
-            </label>
-            {errorMessage ? <p className="error">{errorMessage}</p> : null}
-            <div className="button-row">
-              <button className="button button-secondary" type="button" onClick={signUp} disabled={authDisabled}>
-                Sign Up
-              </button>
-              <button className="button button-primary" type="button" onClick={signIn} disabled={authDisabled}>
-                Sign In
-              </button>
-            </div>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                signIn();
+              }}
+            >
+              <label className="field">
+                <span>Username</span>
+                <input
+                  autoFocus
+                  type="text"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  placeholder="yourname"
+                />
+              </label>
+              <label className="field">
+                <span>Password</span>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  placeholder="password"
+                />
+              </label>
+              {errorMessage ? <p className="error">{errorMessage}</p> : null}
+              <div className="button-row">
+                <button className="button button-secondary" type="button" onClick={signUp} disabled={authDisabled}>
+                  Sign Up
+                </button>
+                <button className="button button-primary" type="submit" disabled={authDisabled}>
+                  Sign In
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       ) : null}
