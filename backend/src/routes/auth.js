@@ -5,7 +5,6 @@ async function authRoutes(app, options) {
   const getUserByUsername = db.prepare(
     "SELECT id, username, password_hash, role FROM users WHERE username = ?"
   );
-  const setUserRoleByUsername = db.prepare("UPDATE users SET role = ? WHERE username = ?");
 
   app.post("/auth/signup", async (request, reply) => {
     const { username, password } = request.body || {};
@@ -68,29 +67,6 @@ async function authRoutes(app, options) {
         username: user.username,
         role: user.role,
       },
-    };
-  });
-
-  app.post("/auth/promote", { preHandler: auth.requireAdmin }, async (request, reply) => {
-    const { username } = request.body || {};
-
-    if (!username || typeof username !== "string") {
-      return reply.code(400).send({ error: "Body must include string username" });
-    }
-
-    const normalizedUsername = username.trim();
-    if (!normalizedUsername) {
-      return reply.code(400).send({ error: "Username cannot be empty" });
-    }
-
-    const result = setUserRoleByUsername.run("curator", normalizedUsername);
-    if (result.changes === 0) {
-      return reply.code(404).send({ error: "User not found" });
-    }
-
-    return {
-      username: normalizedUsername,
-      role: "curator",
     };
   });
 
