@@ -74,7 +74,7 @@ export default function NewPageForm({ user, pageIndex }) {
             type="text"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
-            placeholder="Closed Loop Cooling"
+            placeholder="Page Title"
             required
           />
         </label>

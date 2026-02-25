@@ -455,6 +455,41 @@ p {
   gap: 0.6rem;
 }
 
+.admin-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th,
+.admin-table td {
+  border-bottom: 1px solid #d9e2ec;
+  padding: 0.6rem;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.admin-table th {
+  color: #334e68;
+  font-size: 0.9rem;
+}
+
+.admin-table td input {
+  width: 100%;
+  border: 1px solid #bcccdc;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
 @media (max-width: 640px) {
   .navbar {
     gap: 0.5rem;

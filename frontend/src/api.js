@@ -11,7 +11,9 @@ export async function apiRequest(path, options = {}) {
 
   if (!response.ok) {
     const message = payload?.error || `Request failed with ${response.status}`;
-    throw new Error(message);
+    const error = new Error(message);
+    error.status = response.status;
+    throw error;
   }
 
   return payload;

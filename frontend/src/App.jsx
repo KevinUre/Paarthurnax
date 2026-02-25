@@ -9,6 +9,7 @@ import PagesIndexPage from "./pages/PagesIndexPage.jsx";
 import NewPageForm from "./pages/NewPageForm.jsx";
 import PageDetail from "./pages/PageDetail.jsx";
 import EditPageForm from "./pages/EditPageForm.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
 
 export default function App() {
   const navigate = useNavigate();
@@ -213,6 +214,7 @@ export default function App() {
           <Route path="/pages/new" element={<NewPageForm user={user} pageIndex={searchIndex} />} />
           <Route path="/pages/:id" element={<PageDetail user={user} />} />
           <Route path="/pages/:id/edit" element={<EditPageForm user={user} pageIndex={searchIndex} />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </div>
 
