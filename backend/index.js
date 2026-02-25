@@ -7,6 +7,16 @@ const app = Fastify({ logger: true });
 const dbPath = path.join(__dirname, "data.db");
 const db = new Database(dbPath);
 
+app.addHook("onRequest", async (request, reply) => {
+  reply.header("Access-Control-Allow-Origin", "*");
+  reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  reply.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+
+  if (request.method === "OPTIONS") {
+    return reply.code(204).send();
+  }
+});
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS pages (
     id TEXT PRIMARY KEY,
