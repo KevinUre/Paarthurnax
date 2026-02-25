@@ -1,16 +1,23 @@
 {
   "name": "paarthurnax-frontend",
   "version": "1.0.0",
+  "private": true,
   "description": "",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "keywords": [],
   "author": "",
   "license": "GPL-3.0-or-later",
   "dependencies": {
     "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.4",
     "vite": "^7.3.1"
   }
 }
