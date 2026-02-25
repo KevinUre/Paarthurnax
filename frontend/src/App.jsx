@@ -216,6 +216,15 @@ export default function App() {
         </Routes>
       </div>
 
+      <footer className="site-footer">
+        <a href="https://linktr.ee/michiganbemad" target="_blank" rel="noreferrer">
+          Get Connected
+        </a>
+        <a href="https://github.com/KevinUre/Paarthurnax/issues/new" target="_blank" rel="noreferrer">
+          Notice an Issue?
+        </a>
+      </footer>
+
       <AuthModal
         show={showAuthModal}
         onClose={() => setShowAuthModal(false)}
