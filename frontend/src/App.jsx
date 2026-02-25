@@ -21,6 +21,117 @@ function canManagePages(user) {
   return user?.role === "curator" || user?.role === "admin";
 }
 
+function rankPageMatches(pageIndex, rawQuery, limit = 8) {
+  const query = rawQuery.trim().toLowerCase();
+  if (!query) {
+    return [];
+  }
+
+  return pageIndex
+    .map((item) => {
+      const title = item.title.toLowerCase();
+      const exact = title === query ? 0 : 1;
+      const startsWith = title.startsWith(query) ? 0 : 1;
+      const includes = title.includes(query) ? 0 : 1;
+      const position = title.indexOf(query);
+      const rankPosition = position === -1 ? Number.MAX_SAFE_INTEGER : position;
+
+      return { ...item, exact, startsWith, includes, rankPosition };
+    })
+    .filter((item) => item.includes === 0)
+    .sort((a, b) =>
+      a.exact - b.exact ||
+      a.startsWith - b.startsWith ||
+      a.rankPosition - b.rankPosition ||
+      a.title.localeCompare(b.title)
+    )
+    .slice(0, limit);
+}
+
+function getActiveWikiLinkQuery(text, cursorPosition) {
+  const safeText = typeof text === "string" ? text : "";
+  const cursor = Math.max(0, Math.min(cursorPosition ?? safeText.length, safeText.length));
+  const beforeCursor = safeText.slice(0, cursor);
+  const openIndex = beforeCursor.lastIndexOf("[[");
+  if (openIndex < 0) {
+    return null;
+  }
+
+  const closeIndex = beforeCursor.lastIndexOf("]]");
+  if (closeIndex > openIndex) {
+    return null;
+  }
+
+  const insideToken = beforeCursor.slice(openIndex + 2);
+  if (insideToken.includes("\n")) {
+    return null;
+  }
+
+  const targetPortion = insideToken.split("|")[0].trim();
+  return targetPortion;
+}
+
+function WikiLinkTextarea({ label, rows, value, onChange, pageIndex }) {
+  const [isFocused, setIsFocused] = useState(false);
+  const [cursorPosition, setCursorPosition] = useState(0);
+
+  const activeQuery = useMemo(
+    () => getActiveWikiLinkQuery(value, cursorPosition),
+    [value, cursorPosition]
+  );
+
+  const matches = useMemo(() => {
+    if (!activeQuery) {
+      return [];
+    }
+    return rankPageMatches(pageIndex, activeQuery, 6);
+  }, [activeQuery, pageIndex]);
+
+  const showHints = isFocused && activeQuery !== null;
+
+  return (
+    <label className="field">
+      <span>{label}</span>
+      <textarea
+        rows={rows}
+        value={value}
+        onChange={(event) => {
+          onChange(event);
+          setCursorPosition(event.target.selectionStart ?? event.target.value.length);
+        }}
+        onClick={(event) => setCursorPosition(event.target.selectionStart ?? value.length)}
+        onKeyUp={(event) => setCursorPosition(event.currentTarget.selectionStart ?? value.length)}
+        onSelect={(event) => setCursorPosition(event.currentTarget.selectionStart ?? value.length)}
+        onFocus={(event) => {
+          setIsFocused(true);
+          setCursorPosition(event.target.selectionStart ?? value.length);
+        }}
+        onBlur={() => setIsFocused(false)}
+      />
+      {showHints ? (
+        <div className="wikilink-hints">
+          <p className="wikilink-hints-title">
+            Checking link target for <code>[[{activeQuery || "..."}]]</code>
+          </p>
+          {activeQuery ? (
+            matches.length ? (
+              <ul className="wikilink-hints-list">
+                {matches.map((item) => (
+                  <li key={item.id}>{item.title}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="wikilink-hints-empty">No page title matches that link target.</p>
+            )
+          ) : (
+            <p className="wikilink-hints-empty">Start typing after <code>[[</code> to validate links.</p>
+          )}
+        </div>
+      ) : null}
+    </label>
+  );
+}
+
 function PagesIndexPage({ user }) {
   const [pages, setPages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -93,7 +204,7 @@ function citationsToLines(citations) {
     .join("\n");
 }
 
-function NewPageForm({ user }) {
+function NewPageForm({ user, pageIndex }) {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
   const [talkingPointsText, setTalkingPointsText] = useState("");
@@ -171,32 +282,29 @@ function NewPageForm({ user }) {
           />
         </label>
 
-        <label className="field">
-          <span>Talking Points (one per line)</span>
-          <textarea
-            rows={8}
-            value={talkingPointsText}
-            onChange={(event) => setTalkingPointsText(event.target.value)}
-          />
-        </label>
+        <WikiLinkTextarea
+          label="Talking Points (one per line)"
+          rows={8}
+          value={talkingPointsText}
+          onChange={(event) => setTalkingPointsText(event.target.value)}
+          pageIndex={pageIndex}
+        />
 
-        <label className="field">
-          <span>Questions (one per line)</span>
-          <textarea
-            rows={8}
-            value={questionsText}
-            onChange={(event) => setQuestionsText(event.target.value)}
-          />
-        </label>
+        <WikiLinkTextarea
+          label="Questions (one per line)"
+          rows={8}
+          value={questionsText}
+          onChange={(event) => setQuestionsText(event.target.value)}
+          pageIndex={pageIndex}
+        />
 
-        <label className="field">
-          <span>Related (one per line)</span>
-          <textarea
-            rows={6}
-            value={relatedText}
-            onChange={(event) => setRelatedText(event.target.value)}
-          />
-        </label>
+        <WikiLinkTextarea
+          label="Related (one per line)"
+          rows={6}
+          value={relatedText}
+          onChange={(event) => setRelatedText(event.target.value)}
+          pageIndex={pageIndex}
+        />
 
         <label className="field">
           <span>Citations URLs (one per line, auto-numbered)</span>
@@ -222,7 +330,7 @@ function NewPageForm({ user }) {
   );
 }
 
-function EditPageForm({ user }) {
+function EditPageForm({ user, pageIndex }) {
   const navigate = useNavigate();
   const { id } = useParams();
   const [title, setTitle] = useState("");
@@ -345,32 +453,29 @@ function EditPageForm({ user }) {
           />
         </label>
 
-        <label className="field">
-          <span>Talking Points (one per line)</span>
-          <textarea
-            rows={8}
-            value={talkingPointsText}
-            onChange={(event) => setTalkingPointsText(event.target.value)}
-          />
-        </label>
+        <WikiLinkTextarea
+          label="Talking Points (one per line)"
+          rows={8}
+          value={talkingPointsText}
+          onChange={(event) => setTalkingPointsText(event.target.value)}
+          pageIndex={pageIndex}
+        />
 
-        <label className="field">
-          <span>Questions (one per line)</span>
-          <textarea
-            rows={8}
-            value={questionsText}
-            onChange={(event) => setQuestionsText(event.target.value)}
-          />
-        </label>
+        <WikiLinkTextarea
+          label="Questions (one per line)"
+          rows={8}
+          value={questionsText}
+          onChange={(event) => setQuestionsText(event.target.value)}
+          pageIndex={pageIndex}
+        />
 
-        <label className="field">
-          <span>Related (one per line)</span>
-          <textarea
-            rows={6}
-            value={relatedText}
-            onChange={(event) => setRelatedText(event.target.value)}
-          />
-        </label>
+        <WikiLinkTextarea
+          label="Related (one per line)"
+          rows={6}
+          value={relatedText}
+          onChange={(event) => setRelatedText(event.target.value)}
+          pageIndex={pageIndex}
+        />
 
         <label className="field">
           <span>Citations URLs (one per line, auto-numbered)</span>
@@ -647,30 +752,7 @@ export default function App() {
     [isSubmitting, username, password]
   );
   const searchResults = useMemo(() => {
-    const query = searchQuery.trim().toLowerCase();
-    if (!query) {
-      return [];
-    }
-
-    return searchIndex
-      .map((item) => {
-        const title = item.title.toLowerCase();
-        const exact = title === query ? 0 : 1;
-        const startsWith = title.startsWith(query) ? 0 : 1;
-        const includes = title.includes(query) ? 0 : 1;
-        const position = title.indexOf(query);
-        const rankPosition = position === -1 ? Number.MAX_SAFE_INTEGER : position;
-
-        return { ...item, exact, startsWith, includes, rankPosition };
-      })
-      .filter((item) => item.includes === 0)
-      .sort((a, b) =>
-        a.exact - b.exact ||
-        a.startsWith - b.startsWith ||
-        a.rankPosition - b.rankPosition ||
-        a.title.localeCompare(b.title)
-      )
-      .slice(0, 8);
+    return rankPageMatches(searchIndex, searchQuery, 8);
   }, [searchIndex, searchQuery]);
 
   async function signIn() {
@@ -860,9 +942,9 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/pages" element={<PagesIndexPage user={user} />} />
-          <Route path="/pages/new" element={<NewPageForm user={user} />} />
+          <Route path="/pages/new" element={<NewPageForm user={user} pageIndex={searchIndex} />} />
           <Route path="/pages/:id" element={<PageDetail user={user} />} />
-          <Route path="/pages/:id/edit" element={<EditPageForm user={user} />} />
+          <Route path="/pages/:id/edit" element={<EditPageForm user={user} pageIndex={searchIndex} />} />
         </Routes>
       </div>
 

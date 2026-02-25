@@ -375,6 +375,41 @@ p {
   line-height: 1.45;
 }
 
+.wikilink-hints {
+  background: #f8fbff;
+  border: 1px solid #d9e2ec;
+  border-radius: 8px;
+  padding: 0.55rem 0.65rem;
+}
+
+.wikilink-hints-title {
+  margin: 0;
+  font-size: 0.86rem;
+  color: #334e68;
+}
+
+.wikilink-hints-title code,
+.wikilink-hints-empty code {
+  background: #e6edf7;
+  border-radius: 5px;
+  padding: 0.05rem 0.3rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.wikilink-hints-list {
+  margin: 0.45rem 0 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.25rem;
+  color: #243b53;
+}
+
+.wikilink-hints-empty {
+  margin: 0.45rem 0 0;
+  color: #486581;
+  font-size: 0.9rem;
+}
+
 .page-form {
   display: grid;
   gap: 0.7rem;
