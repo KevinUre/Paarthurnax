@@ -72,6 +72,14 @@ body {
   box-shadow: 0 12px 28px rgba(18, 38, 58, 0.1);
 }
 
+.hero-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
 .eyebrow {
   margin: 0 0 0.75rem;
   color: #486581;
@@ -258,9 +266,33 @@ p {
   font-size: 1rem;
 }
 
+.field textarea {
+  border: 1px solid #bcccdc;
+  border-radius: 8px;
+  padding: 0.7rem 0.75rem;
+  font-size: 1rem;
+  resize: vertical;
+  min-height: 8rem;
+  line-height: 1.45;
+}
+
+.page-form {
+  display: grid;
+  gap: 0.7rem;
+}
+
 .error {
   margin: 0.25rem 0 0.75rem;
   color: #b42318;
+}
+
+.error-toast {
+  margin: 0;
+  background: #fef3f2;
+  border: 1px solid #fecdca;
+  color: #b42318;
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
 }
 
 .button-row {
@@ -282,6 +314,11 @@ p {
   .hero {
     margin: 1rem auto;
     padding: 1.25rem;
+  }
+
+  .hero-header {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .detail-page {

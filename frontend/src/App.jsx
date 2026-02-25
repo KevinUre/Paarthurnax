@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, Route, Routes, useParams } from "react-router-dom";
+import { Link, Route, Routes, useNavigate, useParams } from "react-router-dom";
 import { apiRequest, AUTH_TOKEN_KEY } from "./api.js";
 
 function HomePage() {
@@ -12,7 +12,11 @@ function HomePage() {
   );
 }
 
-function PagesIndexPage() {
+function canManagePages(user) {
+  return user?.role === "curator" || user?.role === "admin";
+}
+
+function PagesIndexPage({ user }) {
   const [pages, setPages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -26,8 +30,17 @@ function PagesIndexPage() {
 
   return (
     <section className="hero">
-      <p className="eyebrow">Pages</p>
-      <h1>All Pages</h1>
+      <div className="hero-header">
+        <div>
+          <p className="eyebrow">Pages</p>
+          <h1>All Pages</h1>
+        </div>
+        {canManagePages(user) ? (
+          <Link className="button button-primary" to="/pages/new">
+            New Page
+          </Link>
+        ) : null}
+      </div>
       {isLoading ? <p>Loading pages...</p> : null}
       {error ? <p className="error">{error}</p> : null}
       {!isLoading && !error ? (
@@ -41,6 +54,147 @@ function PagesIndexPage() {
           ))}
         </ul>
       ) : null}
+    </section>
+  );
+}
+
+function linesToArray(multiline) {
+  return multiline
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function NewPageForm({ user }) {
+  const navigate = useNavigate();
+  const [title, setTitle] = useState("");
+  const [talkingPointsText, setTalkingPointsText] = useState("");
+  const [questionsText, setQuestionsText] = useState("");
+  const [relatedText, setRelatedText] = useState("");
+  const [citationsText, setCitationsText] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
+
+  if (!canManagePages(user)) {
+    return (
+      <section className="hero">
+        <h1>Not authorized</h1>
+        <p className="error">You must be signed in as curator or admin to create pages.</p>
+      </section>
+    );
+  }
+
+  async function onSubmit(event) {
+    event.preventDefault();
+    const normalizedTitle = title.trim();
+    if (!normalizedTitle) {
+      setError("Title is required.");
+      return;
+    }
+
+    setError("");
+    setIsSubmitting(true);
+
+    const citationUrls = linesToArray(citationsText);
+    const citations = Object.fromEntries(
+      citationUrls.map((url, index) => [String(index + 1), url])
+    );
+
+    const data = {
+      title: normalizedTitle,
+      talkingPoints: linesToArray(talkingPointsText),
+      questions: linesToArray(questionsText),
+      related: linesToArray(relatedText),
+      citations,
+    };
+
+    const token = localStorage.getItem(AUTH_TOKEN_KEY);
+
+    try {
+      await apiRequest("/pages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          id: normalizedTitle,
+          data,
+        }),
+      });
+      navigate("/pages");
+    } catch (submitError) {
+      setError(submitError.message);
+      setIsSubmitting(false);
+    }
+  }
+
+  return (
+    <section className="detail-page">
+      <header className="detail-header">
+        <h1>Create Page</h1>
+        <p>Each line in list fields becomes one item.</p>
+      </header>
+
+      <form className="page-form" onSubmit={onSubmit}>
+        <label className="field">
+          <span>Title (also used as page key)</span>
+          <input
+            type="text"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            placeholder="Closed Loop Cooling"
+            required
+          />
+        </label>
+
+        <label className="field">
+          <span>Talking Points (one per line)</span>
+          <textarea
+            rows={8}
+            value={talkingPointsText}
+            onChange={(event) => setTalkingPointsText(event.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span>Questions (one per line)</span>
+          <textarea
+            rows={8}
+            value={questionsText}
+            onChange={(event) => setQuestionsText(event.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span>Related (one per line)</span>
+          <textarea
+            rows={6}
+            value={relatedText}
+            onChange={(event) => setRelatedText(event.target.value)}
+          />
+        </label>
+
+        <label className="field">
+          <span>Citations URLs (one per line, auto-numbered)</span>
+          <textarea
+            rows={8}
+            value={citationsText}
+            onChange={(event) => setCitationsText(event.target.value)}
+          />
+        </label>
+
+        {error ? <p className="error-toast">{error}</p> : null}
+
+        <div className="button-row">
+          <Link className="button button-secondary" to="/pages">
+            Cancel
+          </Link>
+          <button className="button button-primary" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Creating..." : "Create Page"}
+          </button>
+        </div>
+      </form>
     </section>
   );
 }
@@ -350,7 +504,8 @@ export default function App() {
       <div className="content-wrap">
         <Routes>
           <Route path="/" element={<HomePage />} />
-          <Route path="/pages" element={<PagesIndexPage />} />
+          <Route path="/pages" element={<PagesIndexPage user={user} />} />
+          <Route path="/pages/new" element={<NewPageForm user={user} />} />
           <Route path="/pages/:id" element={<PageDetail />} />
         </Routes>
       </div>
