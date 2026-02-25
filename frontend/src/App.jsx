@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, Route, Routes, useNavigate, useParams } from "react-router-dom";
+import { Link, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { apiRequest, AUTH_TOKEN_KEY } from "./api.js";
 
 function HomePage() {
@@ -560,15 +560,23 @@ function PageDetail({ user }) {
 }
 
 export default function App() {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchIndex, setSearchIndex] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const userMenuRef = useRef(null);
+  const desktopSearchRef = useRef(null);
+  const mobileSearchRef = useRef(null);
 
   useEffect(() => {
     const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
@@ -592,12 +600,40 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+    apiRequest("/pages")
+      .then((pages) => {
+        if (cancelled) {
+          return;
+        }
+
+        setSearchIndex(
+          pages.map((page) => ({
+            id: page.id,
+            title: String(page.data?.title || page.id),
+          }))
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSearchIndex([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname]);
+
+  useEffect(() => {
     function handleOutsideClick(event) {
-      if (!showUserMenu) {
-        return;
+      const insideDesktop = desktopSearchRef.current?.contains(event.target);
+      const insideMobile = mobileSearchRef.current?.contains(event.target);
+      if (!insideDesktop && !insideMobile) {
+        setShowSearchResults(false);
       }
 
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+      if (showUserMenu && userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setShowUserMenu(false);
       }
     }
@@ -610,6 +646,32 @@ export default function App() {
     () => isSubmitting || !username.trim() || !password,
     [isSubmitting, username, password]
   );
+  const searchResults = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) {
+      return [];
+    }
+
+    return searchIndex
+      .map((item) => {
+        const title = item.title.toLowerCase();
+        const exact = title === query ? 0 : 1;
+        const startsWith = title.startsWith(query) ? 0 : 1;
+        const includes = title.includes(query) ? 0 : 1;
+        const position = title.indexOf(query);
+        const rankPosition = position === -1 ? Number.MAX_SAFE_INTEGER : position;
+
+        return { ...item, exact, startsWith, includes, rankPosition };
+      })
+      .filter((item) => item.includes === 0)
+      .sort((a, b) =>
+        a.exact - b.exact ||
+        a.startsWith - b.startsWith ||
+        a.rankPosition - b.rankPosition ||
+        a.title.localeCompare(b.title)
+      )
+      .slice(0, 8);
+  }, [searchIndex, searchQuery]);
 
   async function signIn() {
     setIsSubmitting(true);
@@ -671,13 +733,71 @@ export default function App() {
     setErrorMessage("");
   }
 
+  function goToResult(id) {
+    navigate(`/pages/${encodeURIComponent(id)}`);
+    setShowSearchResults(false);
+    setShowMobileSearch(false);
+    setSearchQuery("");
+  }
+
+  function onSearchSubmit(event) {
+    event.preventDefault();
+    if (searchResults.length > 0) {
+      goToResult(searchResults[0].id);
+    }
+  }
+
   return (
     <main className="app-shell">
       <nav className="navbar">
         <Link className="brand" to="/">
           Paarthurnax
         </Link>
+        <div className="navbar-search-desktop" ref={desktopSearchRef}>
+          <form className="search-form" onSubmit={onSearchSubmit}>
+            <input
+              className="search-input"
+              type="search"
+              placeholder="Search page titles..."
+              value={searchQuery}
+              onFocus={() => setShowSearchResults(true)}
+              onChange={(event) => {
+                setSearchQuery(event.target.value);
+                setShowSearchResults(true);
+              }}
+            />
+            {showSearchResults && searchQuery.trim() ? (
+              <ul className="search-results" role="listbox">
+                {searchResults.length ? (
+                  searchResults.map((item) => (
+                    <li key={item.id}>
+                      <button className="search-result-button" type="button" onClick={() => goToResult(item.id)}>
+                        {item.title}
+                      </button>
+                    </li>
+                  ))
+                ) : (
+                  <li className="search-empty">No matches.</li>
+                )}
+              </ul>
+            ) : null}
+          </form>
+        </div>
         <div className="nav-actions">
+          <button
+            className="search-toggle"
+            type="button"
+            aria-label="Toggle search"
+            onClick={() => {
+              setShowMobileSearch((open) => !open);
+              setShowSearchResults(true);
+            }}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="11" cy="11" r="7" />
+              <line x1="16.65" y1="16.65" x2="21" y2="21" />
+            </svg>
+          </button>
           {isCheckingSession ? null : user ? (
             <div className="user-menu-wrap" ref={userMenuRef}>
               <button
@@ -701,6 +821,39 @@ export default function App() {
             </button>
           )}
         </div>
+        {showMobileSearch ? (
+          <div className="navbar-search-mobile" ref={mobileSearchRef}>
+            <form className="search-form" onSubmit={onSearchSubmit}>
+              <input
+                className="search-input"
+                type="search"
+                autoFocus
+                placeholder="Search page titles..."
+                value={searchQuery}
+                onFocus={() => setShowSearchResults(true)}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  setShowSearchResults(true);
+                }}
+              />
+              {showSearchResults && searchQuery.trim() ? (
+                <ul className="search-results" role="listbox">
+                  {searchResults.length ? (
+                    searchResults.map((item) => (
+                      <li key={item.id}>
+                        <button className="search-result-button" type="button" onClick={() => goToResult(item.id)}>
+                          {item.title}
+                        </button>
+                      </li>
+                    ))
+                  ) : (
+                    <li className="search-empty">No matches.</li>
+                  )}
+                </ul>
+              ) : null}
+            </form>
+          </div>
+        ) : null}
       </nav>
 
       <div className="content-wrap">
