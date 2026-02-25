@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AUTH_TOKEN_KEY, apiRequest } from "../api.js";
+import { apiRequest } from "../api.js";
 
 export default function AdminPage() {
   const [users, setUsers] = useState([]);
@@ -10,11 +10,8 @@ export default function AdminPage() {
   const [statusCode, setStatusCode] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
     apiRequest("/admin/users", {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      requireAuth: true,
     })
       .then((result) => {
         setUsers(result.users || []);
@@ -57,7 +54,6 @@ export default function AdminPage() {
   }
 
   async function saveRole(userId) {
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
     const roleValue = String(editedRoles[userId] || "").trim();
     if (!roleValue) {
       setError("Role cannot be empty.");
@@ -71,8 +67,8 @@ export default function AdminPage() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        requireAuth: true,
         body: JSON.stringify({ role: roleValue }),
       });
 
@@ -92,15 +88,12 @@ export default function AdminPage() {
       return;
     }
 
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
     setError("");
     setIsSavingById((state) => ({ ...state, [user.id]: true }));
     try {
       await apiRequest(`/admin/users/${user.id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        requireAuth: true,
       });
 
       setUsers((current) => current.filter((item) => item.id !== user.id));

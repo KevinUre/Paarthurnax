@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Route, Routes, useLocation, useNavigate } from "react-router-dom";
-import { apiRequest, AUTH_TOKEN_KEY } from "./api.js";
+import {
+  apiRequest,
+  clearAuthTokens,
+  getAccessToken,
+  setAuthTokens,
+} from "./api.js";
 import { rankPageMatches } from "./utils/pageData.js";
 import NavBar from "./components/NavBar.jsx";
 import AuthModal from "./components/AuthModal.jsx";
@@ -33,20 +38,20 @@ export default function App() {
   const mobileSearchRef = useRef(null);
 
   useEffect(() => {
-    const storedToken = localStorage.getItem(AUTH_TOKEN_KEY);
+    const storedToken = getAccessToken();
     if (!storedToken) {
       setIsCheckingSession(false);
       return;
     }
 
     apiRequest("/auth/me", {
-      headers: { Authorization: `Bearer ${storedToken}` },
+      requireAuth: true,
     })
       .then((result) => {
         setUser(result.user);
       })
       .catch(() => {
-        localStorage.removeItem(AUTH_TOKEN_KEY);
+        clearAuthTokens();
       })
       .finally(() => {
         setIsCheckingSession(false);
@@ -120,7 +125,7 @@ export default function App() {
         }),
       });
 
-      localStorage.setItem(AUTH_TOKEN_KEY, result.token);
+      setAuthTokens(result.accessToken, result.refreshToken);
       setUser(result.user);
       setShowAuthModal(false);
       setPassword("");
@@ -152,8 +157,17 @@ export default function App() {
     }
   }
 
-  function logout() {
-    localStorage.removeItem(AUTH_TOKEN_KEY);
+  async function logout() {
+    try {
+      await apiRequest("/auth/logout", {
+        method: "POST",
+        requireAuth: true,
+      });
+    } catch (_error) {
+      // Clear local auth state even if server-side logout fails.
+    }
+
+    clearAuthTokens();
     setUser(null);
     setShowUserMenu(false);
     setUsername("");

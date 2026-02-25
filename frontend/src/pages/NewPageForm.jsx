@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { AUTH_TOKEN_KEY, apiRequest } from "../api.js";
+import { apiRequest } from "../api.js";
 import { canManagePages, linesToArray, linesToCitations } from "../utils/pageData.js";
 import WikiLinkTextarea from "../components/WikiLinkTextarea.jsx";
 
@@ -42,15 +42,13 @@ export default function NewPageForm({ user, pageIndex }) {
       citations: linesToCitations(citationsText),
     };
 
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-
     try {
       await apiRequest("/pages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        requireAuth: true,
         body: JSON.stringify({ id: normalizedTitle, data }),
       });
       navigate("/pages");

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { AUTH_TOKEN_KEY, apiRequest } from "../api.js";
+import { apiRequest } from "../api.js";
 import {
   arrayToLines,
   canManagePages,
@@ -72,15 +72,13 @@ export default function EditPageForm({ user, pageIndex }) {
       citations: linesToCitations(citationsText),
     };
 
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-
     try {
       await apiRequest(`/pages/${encodeURIComponent(id)}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
         },
+        requireAuth: true,
         body: JSON.stringify({ data }),
       });
       navigate(`/pages/${encodeURIComponent(id)}`);
@@ -98,14 +96,10 @@ export default function EditPageForm({ user, pageIndex }) {
 
     setError("");
     setIsSubmitting(true);
-    const token = localStorage.getItem(AUTH_TOKEN_KEY);
-
     try {
       await apiRequest(`/pages/${encodeURIComponent(id)}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        requireAuth: true,
       });
       navigate("/pages");
     } catch (deleteError) {
