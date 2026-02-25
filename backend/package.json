@@ -1,5 +1,5 @@
 {
-  "name": "paarthurnax",
+  "name": "paarthurnax-backend",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,5 +8,9 @@
   },
   "keywords": [],
   "author": "",
-  "license": "GPL-3.0-or-later"
+  "license": "GPL-3.0-or-later",
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "fastify": "^5.7.4"
+  }
 }
