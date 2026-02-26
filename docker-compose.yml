@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: paarthurnax-backend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./backend/data.db:/app/data.db
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: paarthurnax-frontend
+    depends_on:
+      - backend
+    ports:
+      - "5173:5173"
+    restart: unless-stopped
