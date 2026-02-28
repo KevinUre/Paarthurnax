@@ -118,44 +118,38 @@ export default function PageDetail({ user }) {
         </Section>
       ) : null}
 
-      <Section title="Talking Points">
-        {talkingPoints.length ? (
+      {talkingPoints.length ? (
+        <Section title="Talking Points">
           <ul className="content-list">
             {talkingPoints.map((item, index) => (
               <li key={`point-${index}`}>{renderRichText(item)}</li>
             ))}
           </ul>
-        ) : (
-          <p>No talking points yet.</p>
-        )}
-      </Section>
+        </Section>
+      ) : null}
 
-      <Section title="Questions">
-        {questions.length ? (
+      {questions.length ? (
+        <Section title="Questions">
           <ul className="content-list">
             {questions.map((item, index) => (
               <li key={`question-${index}`}>{renderRichText(item)}</li>
             ))}
           </ul>
-        ) : (
-          <p>No questions yet.</p>
-        )}
-      </Section>
+        </Section>
+      ) : null}
 
-      <Section title="Related">
-        {related.length ? (
+      {related.length ? (
+        <Section title="Related">
           <ul className="content-list">
             {related.map((item, index) => (
               <li key={`related-${index}`}>{renderRichText(item)}</li>
             ))}
           </ul>
-        ) : (
-          <p>No related pages yet.</p>
-        )}
-      </Section>
+        </Section>
+      ) : null}
 
-      <Section title="Citations">
-        {citationEntries.length ? (
+      {citationEntries.length ? (
+        <Section title="Citations">
           <ol className="citation-list">
             {citationEntries.map(([key, value]) => (
               <li id={`citation-${key}`} key={key}>
@@ -165,10 +159,8 @@ export default function PageDetail({ user }) {
               </li>
             ))}
           </ol>
-        ) : (
-          <p>No citations yet.</p>
-        )}
-      </Section>
+        </Section>
+      ) : null}
     </article>
   );
 }
