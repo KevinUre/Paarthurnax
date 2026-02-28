@@ -153,7 +153,7 @@ export default function PageDetail({ user }) {
             {citationEntries.map(([key, value]) => (
               <li id={`citation-${key}`} key={key}>
                 <a href={value} target="_blank" rel="noreferrer">
-                  [{key}] {value}
+                  {value}
                 </a>
               </li>
             ))}

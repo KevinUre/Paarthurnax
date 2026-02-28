@@ -247,7 +247,7 @@ p {
 }
 
 .content-list li {
-  color: #334e68;
+  color: #102a43;
 }
 
 .content-list a,
@@ -270,6 +270,17 @@ p {
   padding-left: 1.25rem;
   display: grid;
   gap: 0.45rem;
+}
+
+.citation-list li {
+  min-width: 0;
+}
+
+.citation-list a {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .user-pill {
@@ -537,5 +548,14 @@ p {
   .detail-header-row {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .citation-list a {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: normal;
+    word-break: normal;
   }
 }
