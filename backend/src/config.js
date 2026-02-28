@@ -13,7 +13,7 @@ function getEnvBoolean(name, defaultValue) {
 
 const config = {
   port: Number(process.env.PORT) || 3000,
-  dbPath: path.join(__dirname, "..", "data.db"),
+  dbPath: path.join(__dirname, "..", "data", "data.db"),
   corsEnabled: getEnvBoolean("CORS_ENABLED", true),
   corsAllowLocalhost: getEnvBoolean(
     "CORS_ALLOW_LOCALHOST",

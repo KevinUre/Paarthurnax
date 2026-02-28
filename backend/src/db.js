@@ -1,6 +1,9 @@
 const Database = require("better-sqlite3");
+const fs = require("node:fs");
+const path = require("node:path");
 
 function createDatabase(config) {
+  fs.mkdirSync(path.dirname(config.dbPath), { recursive: true });
   const db = new Database(config.dbPath);
   db.pragma("foreign_keys = ON");
   db.pragma("journal_mode = WAL");

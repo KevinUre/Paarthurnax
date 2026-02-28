@@ -44,7 +44,8 @@ Services are exposed on:
 - backend: `3000`
 
 Database persistence:
-- `docker-compose.yml` binds `./backend/data.db` to `/app/data.db` in the backend container.
+- `docker-compose.yml` binds `/backend/data` to `/app/data` in the backend container.
+- SQLite files are stored at `/app/data/data.db` (plus WAL/SHM sidecar files).
 
 Restart behavior:
 - both services use `restart: unless-stopped` (automatic restart on daemon reboot).
