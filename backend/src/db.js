@@ -3,6 +3,8 @@ const Database = require("better-sqlite3");
 function createDatabase(config) {
   const db = new Database(config.dbPath);
   db.pragma("foreign_keys = ON");
+  db.pragma("journal_mode = WAL");
+  db.pragma("busy_timeout = 5000");
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS pages (
