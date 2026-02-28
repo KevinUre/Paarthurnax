@@ -14,6 +14,7 @@ export default function EditPageForm({ user, pageIndex }) {
   const navigate = useNavigate();
   const { id } = useParams();
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [talkingPointsText, setTalkingPointsText] = useState("");
   const [questionsText, setQuestionsText] = useState("");
   const [relatedText, setRelatedText] = useState("");
@@ -27,6 +28,7 @@ export default function EditPageForm({ user, pageIndex }) {
       .then((result) => {
         const data = result?.data || {};
         setTitle(data.title || result.id || "");
+        setDescription(typeof data.description === "string" ? data.description : "");
         setTalkingPointsText(arrayToLines(data.talkingPoints));
         setQuestionsText(arrayToLines(data.questions));
         setRelatedText(arrayToLines(data.related));
@@ -66,6 +68,7 @@ export default function EditPageForm({ user, pageIndex }) {
 
     const data = {
       title: normalizedTitle,
+      description: description.trim(),
       talkingPoints: linesToArray(talkingPointsText),
       questions: linesToArray(questionsText),
       related: linesToArray(relatedText),
@@ -123,6 +126,16 @@ export default function EditPageForm({ user, pageIndex }) {
             value={title}
             onChange={(event) => setTitle(event.target.value)}
             required
+          />
+        </label>
+
+        <label className="field">
+          <span>Description</span>
+          <textarea
+            rows={4}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Short description"
           />
         </label>
 

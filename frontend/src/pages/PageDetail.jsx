@@ -99,6 +99,7 @@ export default function PageDetail({ user }) {
   const questions = Array.isArray(data.questions) ? data.questions : [];
   const talkingPoints = Array.isArray(data.talkingPoints) ? data.talkingPoints : [];
   const related = Array.isArray(data.related) ? data.related : [];
+  const description = typeof data.description === "string" ? data.description.trim() : "";
 
   return (
     <article className="detail-page">
@@ -110,6 +111,12 @@ export default function PageDetail({ user }) {
           </Link>
         ) : null}
       </header>
+
+      {description ? (
+        <Section title="Description">
+          <p>{renderRichText(description)}</p>
+        </Section>
+      ) : null}
 
       <Section title="Talking Points">
         {talkingPoints.length ? (

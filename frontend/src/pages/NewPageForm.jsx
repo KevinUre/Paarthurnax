@@ -7,6 +7,7 @@ import WikiLinkTextarea from "../components/WikiLinkTextarea.jsx";
 export default function NewPageForm({ user, pageIndex }) {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [talkingPointsText, setTalkingPointsText] = useState("");
   const [questionsText, setQuestionsText] = useState("");
   const [relatedText, setRelatedText] = useState("");
@@ -36,6 +37,7 @@ export default function NewPageForm({ user, pageIndex }) {
 
     const data = {
       title: normalizedTitle,
+      description: description.trim(),
       talkingPoints: linesToArray(talkingPointsText),
       questions: linesToArray(questionsText),
       related: linesToArray(relatedText),
@@ -74,6 +76,16 @@ export default function NewPageForm({ user, pageIndex }) {
             onChange={(event) => setTitle(event.target.value)}
             placeholder="Page Title"
             required
+          />
+        </label>
+
+        <label className="field">
+          <span>Description</span>
+          <textarea
+            rows={4}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            placeholder="Short description"
           />
         </label>
 
