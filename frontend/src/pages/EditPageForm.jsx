@@ -65,7 +65,7 @@ export default function EditPageForm({ user, pageIndex }) {
     setIsSubmitting(true);
 
     const data = {
-      title: id,
+      title: normalizedTitle,
       talkingPoints: linesToArray(talkingPointsText),
       questions: linesToArray(questionsText),
       related: linesToArray(relatedText),
@@ -73,7 +73,7 @@ export default function EditPageForm({ user, pageIndex }) {
     };
 
     try {
-      await apiRequest(`/pages/${encodeURIComponent(id)}`, {
+      const result = await apiRequest(`/pages/${encodeURIComponent(id)}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -81,7 +81,7 @@ export default function EditPageForm({ user, pageIndex }) {
         requireAuth: true,
         body: JSON.stringify({ data }),
       });
-      navigate(`/pages/${encodeURIComponent(id)}`);
+      navigate(`/pages/${encodeURIComponent(result.id || normalizedTitle)}`);
     } catch (submitError) {
       setError(submitError.message);
       setIsSubmitting(false);
@@ -117,8 +117,13 @@ export default function EditPageForm({ user, pageIndex }) {
 
       <form className="page-form" onSubmit={onSubmit}>
         <label className="field">
-          <span>Title (read-only, tied to page key)</span>
-          <input type="text" value={title} readOnly />
+          <span>Title (also updates page key)</span>
+          <input
+            type="text"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
+            required
+          />
         </label>
 
         <WikiLinkTextarea
