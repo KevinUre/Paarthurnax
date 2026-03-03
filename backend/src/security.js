@@ -71,13 +71,13 @@ function registerSecurityHooks(app, config) {
   if (config.corsEnabled) {
     app.addHook("onRequest", async (request, reply) => {
       const requestOrigin = request.headers.origin;
-      const allowedOrigin = resolveCorsOrigin(config, requestOrigin);
-      if (requestOrigin && !allowedOrigin) {
+      const isAllowedOrigin = resolveCorsOrigin(config, requestOrigin);
+      if (requestOrigin && !isAllowedOrigin) {
         return reply.code(403).send({ error: "Origin not allowed by CORS policy" });
       }
 
-      if (allowedOrigin) {
-        reply.header("Access-Control-Allow-Origin", allowedOrigin);
+      if (isAllowedOrigin) {
+        reply.header("Access-Control-Allow-Origin", isAllowedOrigin);
         reply.header("Vary", "Origin");
         reply.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
         reply.header("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
