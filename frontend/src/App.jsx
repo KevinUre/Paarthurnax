@@ -19,6 +19,12 @@ import AdminPage from "./pages/AdminPage.jsx";
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
+  const pageHistory = useMemo(() => {
+    if (Array.isArray(location.state?.pageHistory)) {
+      return location.state.pageHistory;
+    }
+    return [];
+  }, [location.state]);
 
   const [user, setUser] = useState(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -175,11 +181,42 @@ export default function App() {
     setErrorMessage("");
   }
 
-  function goToResult(id) {
-    navigate(`/pages/${encodeURIComponent(id)}`);
+  function goHome() {
     setShowSearchResults(false);
     setShowMobileSearch(false);
     setSearchQuery("");
+  }
+
+  function goToResult(id) {
+    navigate(`/pages/${encodeURIComponent(id)}`, {
+      state: { pageHistory: [] },
+    });
+    setShowSearchResults(false);
+    setShowMobileSearch(false);
+    setSearchQuery("");
+  }
+
+  function goToPagesIndex() {}
+
+  function goToPageFromList() {}
+
+  function goToPageFromDetail(sourceId, targetId) {
+    if (!sourceId || !targetId || sourceId === targetId) {
+      return;
+    }
+
+    navigate(`/pages/${encodeURIComponent(targetId)}`, {
+      state: { pageHistory: [...pageHistory, sourceId] },
+    });
+  }
+
+  function popHistoryToPage(targetId) {
+    const targetIndex = pageHistory.lastIndexOf(targetId);
+    navigate(`/pages/${encodeURIComponent(targetId)}`, {
+      state: {
+        pageHistory: targetIndex < 0 ? [] : pageHistory.slice(0, targetIndex),
+      },
+    });
   }
 
   function onSearchSubmit(event) {
@@ -208,6 +245,7 @@ export default function App() {
         onSearchSubmit={onSearchSubmit}
         searchResults={searchResults}
         onGoToResult={goToResult}
+        onGoHome={goHome}
         showMobileSearch={showMobileSearch}
         onToggleMobileSearch={() => {
           setShowMobileSearch((open) => !open);
@@ -223,10 +261,21 @@ export default function App() {
 
       <div className="content-wrap">
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/pages" element={<PagesIndexPage user={user} />} />
+          <Route path="/" element={<HomePage onBrowsePages={goToPagesIndex} />} />
+          <Route path="/pages" element={<PagesIndexPage user={user} onOpenPage={goToPageFromList} />} />
           <Route path="/pages/new" element={<NewPageForm user={user} pageIndex={searchIndex} />} />
-          <Route path="/pages/:id" element={<PageDetail user={user} />} />
+          <Route
+            path="/pages/:id"
+            element={
+              <PageDetail
+                user={user}
+                pageHistory={pageHistory}
+                pageIndex={searchIndex}
+                onOpenRelatedPage={goToPageFromDetail}
+                onPopHistoryToPage={popHistoryToPage}
+              />
+            }
+          />
           <Route path="/pages/:id/edit" element={<EditPageForm user={user} pageIndex={searchIndex} />} />
           <Route path="/admin" element={<AdminPage />} />
         </Routes>

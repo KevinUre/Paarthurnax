@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { apiRequest } from "../api.js";
 import { canManagePages } from "../utils/pageData.js";
 
-function renderRichText(text) {
+function renderRichText(text, onPageLinkClick) {
   if (typeof text !== "string" || !text) {
     return text;
   }
@@ -23,7 +23,11 @@ function renderRichText(text) {
       }
 
       return (
-        <Link key={`wikilink-${index}`} to={`/pages/${encodeURIComponent(target)}`}>
+        <Link
+          key={`wikilink-${index}`}
+          to={`/pages/${encodeURIComponent(target)}`}
+          onClick={(event) => onPageLinkClick?.(event, target)}
+        >
           {label || target}
         </Link>
       );
@@ -52,7 +56,13 @@ function Section({ title, children }) {
   );
 }
 
-export default function PageDetail({ user }) {
+export default function PageDetail({
+  user,
+  pageHistory = [],
+  pageIndex = [],
+  onOpenRelatedPage,
+  onPopHistoryToPage,
+}) {
   const { id } = useParams();
   const [page, setPage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -78,6 +88,17 @@ export default function PageDetail({ user }) {
     return Object.entries(citations).sort(([a], [b]) => Number(a) - Number(b));
   }, [page]);
 
+  const titleById = useMemo(() => {
+    return new Map(pageIndex.map((item) => [item.id, item.title]));
+  }, [pageIndex]);
+
+  const breadcrumbItems = useMemo(() => {
+    return pageHistory.map((pageId) => ({
+      id: pageId,
+      title: titleById.get(pageId) || pageId,
+    }));
+  }, [pageHistory, titleById]);
+
   if (isLoading) {
     return (
       <section className="hero">
@@ -100,9 +121,34 @@ export default function PageDetail({ user }) {
   const talkingPoints = Array.isArray(data.talkingPoints) ? data.talkingPoints : [];
   const related = Array.isArray(data.related) ? data.related : [];
   const description = typeof data.description === "string" ? data.description.trim() : "";
+  const handlePageLinkClick = (event, targetId) => {
+    event.preventDefault();
+    onOpenRelatedPage?.(page.id, targetId);
+  };
 
   return (
     <article className="detail-page">
+      {breadcrumbItems.length ? (
+        <p className="eyebrow breadcrumb-truncate">
+          <span className="breadcrumb-line">
+            {breadcrumbItems.map((item, index) => (
+              <span className="breadcrumb-part" key={`${item.id}-${index}`}>
+                {index > 0 ? <span className="breadcrumb-separator">{">"}</span> : null}
+                <Link
+                  to={`/pages/${encodeURIComponent(item.id)}`}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onPopHistoryToPage?.(item.id);
+                  }}
+                >
+                  {item.title}
+                </Link>
+              </span>
+            ))}
+          </span>
+        </p>
+      ) : null}
+
       <header className="detail-header detail-header-row">
         <h1>{data.title || page.id}</h1>
         {canManagePages(user) ? (
@@ -114,7 +160,7 @@ export default function PageDetail({ user }) {
 
       {description ? (
         <Section title="Description">
-          <p>{renderRichText(description)}</p>
+          <p>{renderRichText(description, handlePageLinkClick)}</p>
         </Section>
       ) : null}
 
@@ -122,7 +168,7 @@ export default function PageDetail({ user }) {
         <Section title="Talking Points">
           <ul className="content-list">
             {talkingPoints.map((item, index) => (
-              <li key={`point-${index}`}>{renderRichText(item)}</li>
+              <li key={`point-${index}`}>{renderRichText(item, handlePageLinkClick)}</li>
             ))}
           </ul>
         </Section>
@@ -132,7 +178,7 @@ export default function PageDetail({ user }) {
         <Section title="Questions">
           <ul className="content-list">
             {questions.map((item, index) => (
-              <li key={`question-${index}`}>{renderRichText(item)}</li>
+              <li key={`question-${index}`}>{renderRichText(item, handlePageLinkClick)}</li>
             ))}
           </ul>
         </Section>
@@ -142,7 +188,7 @@ export default function PageDetail({ user }) {
         <Section title="Related">
           <ul className="content-list">
             {related.map((item, index) => (
-              <li key={`related-${index}`}>{renderRichText(item)}</li>
+              <li key={`related-${index}`}>{renderRichText(item, handlePageLinkClick)}</li>
             ))}
           </ul>
         </Section>

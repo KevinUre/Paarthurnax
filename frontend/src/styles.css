@@ -216,6 +216,44 @@ p {
   margin: 0 0 1rem;
 }
 
+.breadcrumb-truncate {
+  margin-bottom: 0.6rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: rtl;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.breadcrumb-line {
+  direction: ltr;
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+}
+
+.breadcrumb-part {
+  display: inline-flex;
+  align-items: center;
+}
+
+.breadcrumb-separator {
+  margin: 0 0.45rem;
+  color: #829ab1;
+}
+
+.breadcrumb-line a,
+.breadcrumb-line a:visited {
+  color: #486581;
+  text-decoration: none;
+}
+
+.breadcrumb-line a:hover {
+  text-decoration: none;
+}
+
 .detail-header-row {
   display: flex;
   align-items: flex-start;

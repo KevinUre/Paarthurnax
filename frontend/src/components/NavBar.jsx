@@ -14,6 +14,7 @@ export default function NavBar({
   onSearchSubmit,
   searchResults,
   onGoToResult,
+  onGoHome,
   showMobileSearch,
   onToggleMobileSearch,
   desktopSearchRef,
@@ -22,7 +23,7 @@ export default function NavBar({
 }) {
   return (
     <nav className="navbar">
-      <Link className="brand" to="/">
+      <Link className="brand" to="/" onClick={onGoHome}>
         Paarthurnax
       </Link>
 

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { canManagePages } from "../utils/pageData.js";
 import { apiRequest } from "../api.js";
 
-export default function PagesIndexPage({ user }) {
+export default function PagesIndexPage({ user, onOpenPage }) {
   const [pages, setPages] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,7 +34,13 @@ export default function PagesIndexPage({ user }) {
         <ul className="content-list">
           {pages.map((page) => (
             <li key={page.id}>
-              <Link to={`/pages/${encodeURIComponent(page.id)}`}>{page.data?.title || page.id}</Link>
+              <Link
+                to={`/pages/${encodeURIComponent(page.id)}`}
+                state={{ pageHistory: [] }}
+                onClick={() => onOpenPage?.(page.id)}
+              >
+                {page.data?.title || page.id}
+              </Link>
             </li>
           ))}
         </ul>
