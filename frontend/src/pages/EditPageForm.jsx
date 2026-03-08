@@ -86,7 +86,7 @@ export default function EditPageForm({ user, pageIndex }) {
         requireAuth: true,
         body: JSON.stringify({ data }),
       });
-      if (buttonName === "Save") { navigate(`/pages/${encodeURIComponent(result.id || normalizedTitle)}`); }
+      if (buttonName === "Apply") { navigate(`/pages/${encodeURIComponent(result.id || normalizedTitle)}`); }
       else { setIsSubmitting(false); }
     } catch (submitError) {
       setError(submitError.message);
@@ -184,11 +184,11 @@ export default function EditPageForm({ user, pageIndex }) {
           <Link className="button button-secondary" to={`/pages/${encodeURIComponent(id)}`}>
             Cancel
           </Link>
-          <button className="button button-primary" type="submit" name="Apply" disabled={isSubmitting}>
-            {isSubmitting ? "Saving..." : "Apply Changes"}
-          </button>
           <button className="button button-primary" type="submit" name="Save" disabled={isSubmitting}>
             {isSubmitting ? "Saving..." : "Save Changes"}
+          </button>
+          <button className="button button-primary" type="submit" name="Apply" disabled={isSubmitting}>
+            {isSubmitting ? "Saving..." : "Apply Changes"}
           </button>
         </div>
       </form>
