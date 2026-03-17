@@ -6,7 +6,7 @@ import {
   getAccessToken,
   setAuthTokens,
 } from "./api.js";
-import { rankPageMatches } from "./utils/pageData.js";
+import Fuse from "fuse.js";
 import NavBar from "./components/NavBar.jsx";
 import AuthModal from "./components/AuthModal.jsx";
 import HomePage from "./pages/HomePage.jsx";
@@ -76,6 +76,13 @@ export default function App() {
           pages.map((page) => ({
             id: page.id,
             title: String(page.data?.title || page.id),
+            description: String(page.data?.description || ""),
+            talkingPoints: Array.isArray(page.data?.talkingPoints)
+              ? page.data.talkingPoints.join(" ")
+              : "",
+            questions: Array.isArray(page.data?.questions)
+              ? page.data.questions.join(" ")
+              : "",
           }))
         );
       })
@@ -112,9 +119,27 @@ export default function App() {
     [isSubmitting, username, password]
   );
 
+  const searchEngine = useMemo(() => {
+    if (!searchIndex.length) {
+      return null;
+    }
+    return new Fuse(searchIndex, {
+      keys: ["title", "description", "talkingPoints", "questions"],
+      threshold: 0.35,
+      ignoreLocation: true,
+      includeScore: true,
+    });
+  }, [searchIndex]);
+
   const searchResults = useMemo(
-    () => rankPageMatches(searchIndex, searchQuery, 8),
-    [searchIndex, searchQuery]
+    () => {
+      const query = searchQuery.trim();
+      if (!query || !searchEngine) {
+        return [];
+      }
+      return searchEngine.search(query, { limit: 8 }).map((result) => result.item);
+    },
+    [searchEngine, searchQuery]
   );
 
   async function signIn() {
