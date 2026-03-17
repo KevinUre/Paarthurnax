@@ -160,7 +160,9 @@ export default function PageDetail({
 
       {description ? (
         <Section title="Description">
-          <p>{renderRichText(description, handlePageLinkClick)}</p>
+          <p className="preserve-linebreaks">
+            {renderRichText(description, handlePageLinkClick)}
+          </p>
         </Section>
       ) : null}
 

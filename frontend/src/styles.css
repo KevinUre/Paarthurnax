@@ -202,6 +202,10 @@ p {
   color: #334e68;
 }
 
+.preserve-linebreaks {
+  white-space: pre-line;
+}
+
 .detail-page {
   margin: 2rem auto;
   width: min(860px, 100%);
