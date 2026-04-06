@@ -92,13 +92,7 @@ export default function App() {
           pages.map((page) => ({
             id: page.id,
             title: String(page.data?.title || page.id),
-            description: String(page.data?.description || ""),
-            talkingPoints: Array.isArray(page.data?.talkingPoints)
-              ? page.data.talkingPoints.join(" ")
-              : "",
-            questions: Array.isArray(page.data?.questions)
-              ? page.data.questions.join(" ")
-              : "",
+            body: String(page.data?.body || ""),
           }))
         );
       })
@@ -146,7 +140,7 @@ export default function App() {
       return null;
     }
     return new Fuse(searchIndex, {
-      keys: ["title", "description", "talkingPoints", "questions"],
+      keys: ["title", "body"],
       threshold: 0.35,
       ignoreLocation: true,
       includeScore: true,

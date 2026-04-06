@@ -1,59 +1,25 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { apiRequest } from "../api.js";
 import { canManagePages } from "../utils/pageData.js";
 
-function renderRichText(text, onPageLinkClick) {
-  if (typeof text !== "string" || !text) {
-    return text;
+function transformBodyMarkdown(text) {
+  if (typeof text !== "string" || !text.trim()) {
+    return "";
   }
 
-  const tokenPattern = /(\[\[[^[\]]+\]\]|\[\d+\])/g;
-  const parts = text.split(tokenPattern);
-
-  return parts.map((part, index) => {
-    if (/^\[\[\S/.test(part) && part.endsWith("]]")) {
-      const inner = part.slice(2, -2);
-      const [targetRaw, labelRaw] = inner.split("|");
-      const target = (targetRaw || "").trim();
-      const label = (labelRaw || targetRaw || "").trim();
-
+  return text
+    .replace(/\[\[([^|\]]+)(\|[^\]]*)?\]\]/g, (_match, targetRaw, alias = "") => {
+      const target = String(targetRaw || "").trim();
+      const label = String(alias || "").slice(1).trim() || target;
       if (!target) {
-        return <span key={`txt-${index}`}>{part}</span>;
+        return _match;
       }
-
-      return (
-        <Link
-          key={`wikilink-${index}`}
-          to={`/pages/${encodeURIComponent(target)}`}
-          onClick={(event) => onPageLinkClick?.(event, target)}
-        >
-          {label || target}
-        </Link>
-      );
-    }
-
-    const citationMatch = part.match(/^\[(\d+)\]$/);
-    if (citationMatch) {
-      const citationId = citationMatch[1];
-      return (
-        <a key={`cite-${index}`} href={`#citation-${citationId}`} className="citation-link">
-          [{citationId}]
-        </a>
-      );
-    }
-
-    return <span key={`txt-${index}`}>{part}</span>;
-  });
-}
-
-function Section({ title, children }) {
-  return (
-    <section className="detail-section">
-      <h2>{title}</h2>
-      {children}
-    </section>
-  );
+      return `[${label}](/__page__/${encodeURIComponent(target)})`;
+    })
+    .replace(/\[(\d+)\](?!\()/g, (_match, citationId) => `[${citationId}](#citation-${citationId})`);
 }
 
 export default function PageDetail({
@@ -99,6 +65,10 @@ export default function PageDetail({
     }));
   }, [pageHistory, titleById]);
 
+  const data = page?.data || {};
+  const body = typeof data.body === "string" ? data.body : "";
+  const markdownBody = useMemo(() => transformBodyMarkdown(body), [body]);
+
   if (isLoading) {
     return (
       <section className="hero">
@@ -115,16 +85,6 @@ export default function PageDetail({
       </section>
     );
   }
-
-  const data = page.data || {};
-  const questions = Array.isArray(data.questions) ? data.questions : [];
-  const talkingPoints = Array.isArray(data.talkingPoints) ? data.talkingPoints : [];
-  const related = Array.isArray(data.related) ? data.related : [];
-  const description = typeof data.description === "string" ? data.description.trim() : "";
-  const handlePageLinkClick = (event, targetId) => {
-    event.preventDefault();
-    onOpenRelatedPage?.(page.id, targetId);
-  };
 
   return (
     <article className="detail-page">
@@ -158,46 +118,51 @@ export default function PageDetail({
         ) : null}
       </header>
 
-      {description ? (
-        <Section title="Description">
-          <p className="preserve-linebreaks">
-            {renderRichText(description, handlePageLinkClick)}
-          </p>
-        </Section>
-      ) : null}
+      {markdownBody ? (
+        <div className="markdown-body">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            components={{
+              a({ href, children }) {
+                if (typeof href === "string" && href.startsWith("/__page__/")) {
+                  const targetId = decodeURIComponent(href.slice("/__page__/".length));
+                  return (
+                    <Link
+                      to={`/pages/${encodeURIComponent(targetId)}`}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        onOpenRelatedPage?.(page.id, targetId);
+                      }}
+                    >
+                      {children}
+                    </Link>
+                  );
+                }
 
-      {talkingPoints.length ? (
-        <Section title="Talking Points">
-          <ul className="content-list">
-            {talkingPoints.map((item, index) => (
-              <li key={`point-${index}`}>{renderRichText(item, handlePageLinkClick)}</li>
-            ))}
-          </ul>
-        </Section>
-      ) : null}
+                if (typeof href === "string" && href.startsWith("#citation-")) {
+                  return (
+                    <a href={href} className="citation-link">
+                      {children}
+                    </a>
+                  );
+                }
 
-      {questions.length ? (
-        <Section title="Questions">
-          <ul className="content-list">
-            {questions.map((item, index) => (
-              <li key={`question-${index}`}>{renderRichText(item, handlePageLinkClick)}</li>
-            ))}
-          </ul>
-        </Section>
-      ) : null}
-
-      {related.length ? (
-        <Section title="Related">
-          <ul className="content-list">
-            {related.map((item, index) => (
-              <li key={`related-${index}`}>{renderRichText(item, handlePageLinkClick)}</li>
-            ))}
-          </ul>
-        </Section>
+                return (
+                  <a href={href} target="_blank" rel="noreferrer">
+                    {children}
+                  </a>
+                );
+              },
+            }}
+          >
+            {markdownBody}
+          </ReactMarkdown>
+        </div>
       ) : null}
 
       {citationEntries.length ? (
-        <Section title="Citations">
+        <section className="detail-section">
+          <h2>Citations</h2>
           <ol className="citation-list">
             {citationEntries.map(([key, value]) => (
               <li id={`citation-${key}`} key={key}>
@@ -207,7 +172,7 @@ export default function PageDetail({
               </li>
             ))}
           </ol>
-        </Section>
+        </section>
       ) : null}
     </article>
   );

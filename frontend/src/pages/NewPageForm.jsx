@@ -1,16 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiRequest } from "../api.js";
-import { canManagePages, linesToArray, linesToCitations } from "../utils/pageData.js";
+import { canManagePages, linesToCitations } from "../utils/pageData.js";
 import WikiLinkTextarea from "../components/WikiLinkTextarea.jsx";
 
 export default function NewPageForm({ user, pageIndex }) {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [talkingPointsText, setTalkingPointsText] = useState("");
-  const [questionsText, setQuestionsText] = useState("");
-  const [relatedText, setRelatedText] = useState("");
+  const [body, setBody] = useState("");
   const [citationsText, setCitationsText] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -37,10 +34,7 @@ export default function NewPageForm({ user, pageIndex }) {
 
     const data = {
       title: normalizedTitle,
-      description: description.trim(),
-      talkingPoints: linesToArray(talkingPointsText),
-      questions: linesToArray(questionsText),
-      related: linesToArray(relatedText),
+      body,
       citations: linesToCitations(citationsText),
     };
 
@@ -64,7 +58,6 @@ export default function NewPageForm({ user, pageIndex }) {
     <section className="detail-page">
       <header className="detail-header">
         <h1>Create Page</h1>
-        <p>Each line in list fields becomes one item.</p>
       </header>
 
       <form className="page-form" onSubmit={onSubmit}>
@@ -79,37 +72,15 @@ export default function NewPageForm({ user, pageIndex }) {
           />
         </label>
 
-        <label className="field">
-          <span>Description</span>
-          <textarea
-            rows={4}
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            placeholder="Short description"
-          />
-        </label>
-
         <WikiLinkTextarea
-          label="Talking Points (one per line)"
-          rows={8}
-          value={talkingPointsText}
-          onChange={(event) => setTalkingPointsText(event.target.value)}
-          pageIndex={pageIndex}
-        />
-
-        <WikiLinkTextarea
-          label="Questions (one per line)"
-          rows={8}
-          value={questionsText}
-          onChange={(event) => setQuestionsText(event.target.value)}
-          pageIndex={pageIndex}
-        />
-
-        <WikiLinkTextarea
-          label="Related (one per line)"
-          rows={6}
-          value={relatedText}
-          onChange={(event) => setRelatedText(event.target.value)}
+          label={(
+            <>
+              Body - supports <code>Markdown</code>, <code>[[Page Links]]</code>, <code>[[Page|Alias]]</code>, and citation refs like <code>[1]</code>
+            </>
+          )}
+          rows={18}
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
           pageIndex={pageIndex}
         />
 
