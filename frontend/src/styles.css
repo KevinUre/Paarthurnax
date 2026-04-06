@@ -568,18 +568,32 @@ p {
 
 .citation-list {
   margin: 0;
-  padding-left: 1.25rem;
-  display: grid;
-  gap: 0.45rem;
+  padding-left: 0;
+  list-style: none;
+  counter-reset: citation-item;
 }
 
 .citation-list li {
   min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  column-gap: 0.45rem;
+  counter-increment: citation-item;
+}
+
+.citation-list li::before {
+  content: counter(citation-item) ".";
+  color: var(--text-body);
+}
+
+.citation-list li + li {
+  margin-top: 0.45rem;
 }
 
 .citation-list a {
-  display: inline-block;
-  max-width: 100%;
+  display: block;
+  min-width: 0;
   overflow-wrap: anywhere;
   word-break: break-word;
 }
