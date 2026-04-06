@@ -16,6 +16,21 @@ import PageDetail from "./pages/PageDetail.jsx";
 import EditPageForm from "./pages/EditPageForm.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
 
+const THEME_STORAGE_KEY = "paarthurnax-theme";
+
+function getInitialTheme() {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
+  const storedTheme = window.localStorage.getItem(THEME_STORAGE_KEY);
+  if (storedTheme === "light" || storedTheme === "dark") {
+    return storedTheme;
+  }
+
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
 export default function App() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -38,6 +53,7 @@ export default function App() {
   const [errorMessage, setErrorMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const [theme, setTheme] = useState(getInitialTheme);
 
   const userMenuRef = useRef(null);
   const desktopSearchRef = useRef(null);
@@ -96,6 +112,12 @@ export default function App() {
       cancelled = true;
     };
   }, [location.pathname]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    document.documentElement.style.colorScheme = theme;
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]);
 
   useEffect(() => {
     function handleOutsideClick(event) {
@@ -256,6 +278,8 @@ export default function App() {
       <NavBar
         user={user}
         isCheckingSession={isCheckingSession}
+        theme={theme}
+        onToggleTheme={() => setTheme((currentTheme) => (currentTheme === "dark" ? "light" : "dark"))}
         showUserMenu={showUserMenu}
         onToggleUserMenu={() => setShowUserMenu((current) => !current)}
         onLogout={logout}
