@@ -19,7 +19,7 @@ function transformBodyMarkdown(text) {
       }
       return `[${label}](/__page__/${encodeURIComponent(target)})`;
     })
-    .replace(/\[(\d+)\](?!\()/g, (_match, citationId) => `[${citationId}](#citation-${citationId})`);
+    .replace(/\[(\d+)\](?!\()/g, (_match, citationId) => `[\[${citationId}\]](#citation-${citationId})`);
 }
 
 export default function PageDetail({
