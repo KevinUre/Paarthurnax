@@ -110,12 +110,12 @@ describe('security hooks', () => {
         corsAllowLocalhost: true,
         corsOriginList:["https://example.site"]
       }
-      request.headers['origin'] = "https://localhost:5173";
+      request.headers['origin'] = "https://localhost:80";
 
       registerSecurityHooks(appMock,config);
       await appMock.onRequest(request,reply);
 
-      expect(reply._headers["Access-Control-Allow-Origin"]).toBe("https://localhost:5173");
+      expect(reply._headers["Access-Control-Allow-Origin"]).toBe("https://localhost:80");
       expect(reply._headers["Access-Control-Allow-Headers"]).toBe("Content-Type, Authorization");
     })
   });

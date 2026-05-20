@@ -19,13 +19,13 @@ const config = {
     "CORS_ALLOW_LOCALHOST",
     process.env.NODE_ENV !== "production"
   ),
-  corsOriginList: (process.env.CORS_ORIGIN || "http://localhost:5173,http://127.0.0.1:5173")
+  corsOriginList: (process.env.CORS_ORIGIN || "http://localhost:80,http://127.0.0.1:80")
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean),
   cspEnabled: getEnvBoolean("CSP_ENABLED", process.env.NODE_ENV === "production"),
   cspConnectSrc: (
-    process.env.CSP_CONNECT_SRC || "'self' http://localhost:5173 ws://localhost:5173"
+    process.env.CSP_CONNECT_SRC || "'self' http://localhost:80 ws://localhost:80"
   )
     .split(/\s+/)
     .map((value) => value.trim())

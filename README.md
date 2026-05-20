@@ -40,7 +40,7 @@ docker compose up -d
 ```
 
 Services are exposed on:
-- frontend: `5173`
+- frontend: `80`
 - backend: `3000`
 
 Database persistence:
