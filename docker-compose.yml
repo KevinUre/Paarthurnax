@@ -4,8 +4,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     container_name: paarthurnax-backend
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     volumes:
       - /backend:/app/data
     restart: unless-stopped

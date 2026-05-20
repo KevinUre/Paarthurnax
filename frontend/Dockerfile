@@ -8,7 +8,7 @@ RUN npm ci
 COPY . .
 
 # Vite will load frontend/.env.prod for this build mode.
-RUN npm run build -- --mode prod
+RUN npx vite build --mode prod
 
 FROM nginx:1.27-alpine
 
