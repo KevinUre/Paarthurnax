@@ -25,6 +25,26 @@ app.addHook("onClose", async () => {
   db.close();
 });
 
+let isShuttingDown = false;
+
+async function shutdown(signal) {
+  if (isShuttingDown) {
+    return;
+  }
+
+  isShuttingDown = true;
+  app.log.info({ signal }, "Received shutdown signal");
+
+  try {
+    await app.close();
+    app.log.info("Backend shutdown complete");
+    process.exit(0);
+  } catch (error) {
+    app.log.error({ error, signal }, "Error during backend shutdown");
+    process.exit(1);
+  }
+}
+
 const start = async () => {
   try {
     app.log.info(
@@ -45,3 +65,11 @@ const start = async () => {
 };
 
 start();
+
+process.on("SIGTERM", () => {
+  void shutdown("SIGTERM");
+});
+
+process.on("SIGINT", () => {
+  void shutdown("SIGINT");
+});

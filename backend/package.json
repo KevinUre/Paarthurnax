@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node index.js",
     "dev": "node --watch index.js",
-    "test": "jest"
+    "test": "jest",
+    "migrate:page-body": "node scripts/migrate-page-body.js"
   },
   "keywords": [],
   "author": "",

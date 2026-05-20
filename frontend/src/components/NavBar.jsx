@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 export default function NavBar({
   user,
   isCheckingSession,
+  theme,
+  onToggleTheme,
   showUserMenu,
   onToggleUserMenu,
   onLogout,
@@ -66,6 +68,34 @@ export default function NavBar({
             <circle cx="11" cy="11" r="7" />
             <line x1="16.65" y1="16.65" x2="21" y2="21" />
           </svg>
+        </button>
+        <button
+          className="theme-toggle"
+          type="button"
+          aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
+          onClick={onToggleTheme}
+        >
+          <span className="theme-toggle-track" aria-hidden="true">
+            <span className="theme-toggle-icon theme-toggle-icon-sun">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="12" cy="12" r="4" />
+                <line x1="12" y1="1.5" x2="12" y2="5" />
+                <line x1="12" y1="19" x2="12" y2="22.5" />
+                <line x1="1.5" y1="12" x2="5" y2="12" />
+                <line x1="19" y1="12" x2="22.5" y2="12" />
+                <line x1="4.6" y1="4.6" x2="7.1" y2="7.1" />
+                <line x1="16.9" y1="16.9" x2="19.4" y2="19.4" />
+                <line x1="16.9" y1="7.1" x2="19.4" y2="4.6" />
+                <line x1="4.6" y1="19.4" x2="7.1" y2="16.9" />
+              </svg>
+            </span>
+            <span className="theme-toggle-thumb" />
+            <span className="theme-toggle-icon theme-toggle-icon-moon">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M20 14.2A8.5 8.5 0 1 1 9.8 4a7 7 0 0 0 10.2 10.2Z" />
+              </svg>
+            </span>
+          </span>
         </button>
         {isCheckingSession ? null : user ? (
           <div className="user-menu-wrap" ref={userMenuRef}>

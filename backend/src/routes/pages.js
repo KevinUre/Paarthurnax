@@ -10,6 +10,48 @@ async function pagesRoutes(app, options) {
   const renameAndUpdatePage = db.prepare("UPDATE pages SET id = ?, data = json(?) WHERE id = ?");
   const deletePage = db.prepare("DELETE FROM pages WHERE id = ?");
 
+  function normalizeCitations(citations) {
+    if (!citations || typeof citations !== "object" || Array.isArray(citations)) {
+      return null;
+    }
+
+    const normalized = {};
+    for (const [key, value] of Object.entries(citations)) {
+      if (typeof value !== "string") {
+        return null;
+      }
+      normalized[String(key)] = value.trim();
+    }
+    return normalized;
+  }
+
+  function validatePageData(data) {
+    if (!data || typeof data !== "object" || Array.isArray(data)) {
+      return { error: "Body data must be an object" };
+    }
+
+    if (typeof data.title !== "string" || !data.title.trim()) {
+      return { error: "Body data must include non-empty string title" };
+    }
+
+    if (typeof data.body !== "string") {
+      return { error: "Body data must include string body" };
+    }
+
+    const citations = normalizeCitations(data.citations ?? {});
+    if (!citations) {
+      return { error: "Body data citations must be an object of string values" };
+    }
+
+    return {
+      value: {
+        title: data.title.trim(),
+        body: data.body,
+        citations,
+      },
+    };
+  }
+
   function rewriteWikiLinksInString(text, oldId, newId) {
     if (typeof text !== "string") {
       return text;
@@ -83,7 +125,7 @@ async function pagesRoutes(app, options) {
   app.post("/pages", { preHandler: auth.requireCurator }, async (request, reply) => {
     const { id, data } = request.body || {};
 
-    if (!id || typeof id !== "string") {
+    if (!id || typeof id !== "string" || !id.trim()) {
       return reply.code(400).send({ error: "Body must include string id" });
     }
 
@@ -91,8 +133,19 @@ async function pagesRoutes(app, options) {
       return reply.code(400).send({ error: "Body must include data" });
     }
 
+    const validated = validatePageData(data);
+    if (validated.error) {
+      return reply.code(400).send({ error: validated.error });
+    }
+
+    const normalizedData = validated.value;
+    const normalizedId = id.trim();
+    if (normalizedData.title !== normalizedId) {
+      return reply.code(400).send({ error: "Body id must match data.title" });
+    }
+
     try {
-      insertPage.run(id, JSON.stringify(data));
+      insertPage.run(normalizedId, JSON.stringify(normalizedData));
     } catch (error) {
       if (error.code === "SQLITE_CONSTRAINT_PRIMARYKEY") {
         return reply.code(409).send({ error: "Page with this id already exists" });
@@ -100,7 +153,7 @@ async function pagesRoutes(app, options) {
       throw error;
     }
 
-    return reply.code(201).send({ id, data });
+    return reply.code(201).send({ id: normalizedId, data: normalizedData });
   });
 
   app.put("/pages/:id", { preHandler: auth.requireCurator }, async (request, reply) => {
@@ -111,23 +164,21 @@ async function pagesRoutes(app, options) {
       return reply.code(400).send({ error: "Body must include data" });
     }
 
-    if (!data || typeof data !== "object") {
-      return reply.code(400).send({ error: "Body data must be an object" });
+    const validated = validatePageData(data);
+    if (validated.error) {
+      return reply.code(400).send({ error: validated.error });
     }
 
-    if (!data.title || typeof data.title !== "string" || !data.title.trim()) {
-      return reply.code(400).send({ error: "Body data must include non-empty string title" });
-    }
-
-    const newId = data.title.trim();
+    const normalizedData = validated.value;
+    const newId = normalizedData.title;
 
     if (newId === id) {
-      const result = updatePage.run(JSON.stringify(data), id);
+      const result = updatePage.run(JSON.stringify(normalizedData), id);
       if (result.changes === 0) {
         return reply.code(404).send({ error: "Page not found" });
       }
 
-      return { id: newId, data };
+      return { id: newId, data: normalizedData };
     }
 
     if (getPageIdOnly.get(newId)) {
@@ -139,7 +190,7 @@ async function pagesRoutes(app, options) {
     }
 
     try {
-      renamePageTransaction(id, newId, data);
+      renamePageTransaction(id, newId, normalizedData);
     } catch (error) {
       if (error.code === "SQLITE_CONSTRAINT_PRIMARYKEY") {
         return reply.code(409).send({ error: "Page with this title already exists" });
@@ -147,7 +198,7 @@ async function pagesRoutes(app, options) {
       throw error;
     }
 
-    return { id: newId, data: { ...data, title: newId } };
+    return { id: newId, data: normalizedData };
   });
 
   app.delete("/pages/:id", { preHandler: auth.requireCurator }, async (request, reply) => {
