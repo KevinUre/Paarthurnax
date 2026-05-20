@@ -19,4 +19,7 @@ services:
       - backend
     ports:
       - "80:80"
+      - "443:443"
+    volumes:
+      - /backend/cert:/cert:ro
     restart: unless-stopped
